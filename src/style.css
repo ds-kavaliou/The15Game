@@ -1,3 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+.board {
+  @apply grid bg-[#007718]/20 rounded-[10px] gap-3 p-5;
+}
+
+.board--size-4 {
+  @apply grid-cols-[repeat(4,min(15vw,100px))] grid-rows-[repeat(4,min(15vw,100px))];
+}
+
+.board--size-5 {
+  @apply grid-cols-[repeat(5,min(14vw,90px))] grid-rows-[repeat(5,min(14vw,90px))];
+}
+
+.board--size-6 {
+  @apply grid-cols-[repeat(6,min(13vw,80px))] grid-rows-[repeat(6,min(13vw,80px))];
+}
+
+.board--size-7 {
+  @apply grid-cols-[repeat(7,min(12vw,70px))] grid-rows-[repeat(7,min(12vw,70px))];
+}
+
+.tile {
+  @apply flex items-center justify-center rounded-xl text-2xl bg-[#ffffa5] opacity-[0.999] cursor-pointer hover:bg-[#ffffa5]/80 font-bold;
+}
+
+.menu {
+  @apply rounded font-semibold uppercase py-2 px-4 flex flex-col items-center bg-[#9eaaff]/30;
+}

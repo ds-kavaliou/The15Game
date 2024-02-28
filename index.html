@@ -7,7 +7,22 @@
     <title>The15Game</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app" class="h-full flex flex-col items-center gap-4">
+      <h1>The Fifteen Game</h1>
+      <div id="menu" class="menu">
+        <div class="flex items-center gap-2">
+          <input type="radio" name="size" value="4" />
+          <input type="radio" name="size" value="5" />
+          <input type="radio" name="size" value="6" />
+          <input type="radio" name="size" value="7" />
+        </div>
+      </div>
+      <div id="board" class="board"></div>
+      <div>
+        To move a tile you can <b>click</b> on it or use your <b>arrow keys</b>.
+        Press <b>ESC</b> to pause game.
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

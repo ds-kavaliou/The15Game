@@ -7,10 +7,11 @@ const DOWN = [0, -1] as const;
 
 type TMove = typeof RIGHT | typeof LEFT | typeof UP | typeof DOWN;
 type TItem = { index: number; name: number; isEmpty: boolean };
+type TCoord = [x: number, y: number];
 
 class Game extends EventTarget {
   private _matrix: TItem[][] = [];
-  private _empty: [number, number] = [0, 0];
+  private _empty: TCoord = [0, 0];
 
   public get matrix() {
     return this._matrix;
@@ -36,7 +37,7 @@ class Game extends EventTarget {
 
   public move([dx, dy]: TMove) {
     const [ex, ey] = this._empty;
-    const [nx, ny]: [number, number] = [ex + dx, ey + dy];
+    const [nx, ny]: TCoord = [ex + dx, ey + dy];
 
     if (this.canMove([nx, ny])) {
       this.swap([ex, ey], [nx, ny]);
@@ -53,13 +54,13 @@ class Game extends EventTarget {
     }
   }
 
-  private canMove([x, y]: [number, number]) {
+  private canMove([x, y]: TCoord) {
     return (
       x >= 0 && x < this._matrix.length && y >= 0 && y < this._matrix.length
     );
   }
 
-  private swap([x1, y1]: [number, number], [x2, y2]: [number, number]) {
+  private swap([x1, y1]: TCoord, [x2, y2]: TCoord) {
     [this._matrix[y1][x1], this._matrix[y2][x2]] = [
       this._matrix[y2][x2],
       this._matrix[y1][x1],

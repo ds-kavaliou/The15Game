@@ -9,6 +9,19 @@ type TMove = typeof RIGHT | typeof LEFT | typeof UP | typeof DOWN;
 type TItem = { index: number; name: number; isEmpty: boolean };
 type TCoord = [x: number, y: number];
 
+class SoundBar {
+  private _move = new Audio();
+
+  constructor(src: string) {
+    this._move.src = src;
+    this._move.load();
+  }
+
+  public play() {
+    this._move.currentTime = 0;
+    this._move.play();
+  }
+}
 class Game extends EventTarget {
   private _matrix: TItem[][] = [];
   private _empty: TCoord = [0, 0];
@@ -54,6 +67,14 @@ class Game extends EventTarget {
     }
   }
 
+  public start() {
+    const moves = [UP, DOWN, RIGHT, LEFT];
+
+    for (let i = 0; i < 120; i++) {
+      this.move(moves[Math.floor(Math.random() * moves.length)]);
+    }
+  }
+
   private canMove([x, y]: TCoord) {
     return (
       x >= 0 && x < this._matrix.length && y >= 0 && y < this._matrix.length
@@ -94,7 +115,9 @@ const menu = document.querySelector("#menu")!;
 const radios = [...menu.querySelectorAll<HTMLInputElement>("[type='radio']")];
 
 const board = document.querySelector<HTMLDivElement>("#board")!;
+
 const game = new Game();
+const soundbar = new SoundBar("/move.mp3");
 
 game.addEventListener("ready", ((e: CustomEvent) => {
   const { size } = e.detail;
@@ -126,6 +149,8 @@ game.addEventListener("moved", ((e: CustomEvent) => {
 
   elements[prev.index].style["gridArea"] = `${prev.y + 1} / ${prev.x + 1}`;
   elements[next.index].style["gridArea"] = `${next.y + 1} / ${next.x + 1}`;
+
+  soundbar.play();
 }) as EventListener);
 
 menu.addEventListener("change", (e) => {
@@ -134,6 +159,12 @@ menu.addEventListener("change", (e) => {
 });
 
 radios[0].click();
+
+document
+  .querySelector<HTMLButtonElement>("#start")!
+  .addEventListener("click", () => {
+    game.start();
+  });
 
 document.addEventListener("keydown", (e) => {
   switch (e.code) {

@@ -34,3 +34,7 @@ body {
 .menu {
   @apply rounded font-semibold uppercase py-2 px-4 flex flex-col items-center bg-[#9eaaff]/30;
 }
+
+[data-hidden] {
+  @apply opacity-0 pointer-events-none;
+}

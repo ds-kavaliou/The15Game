@@ -2,13 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: CeliaGarcia;
+  src: url("/font/CeliaGarcia.ttf");
+}
+
 html,
 body {
   height: 100%;
 }
 
+body {
+  font-family: CeliaGarcia;
+}
+
 .board {
-  @apply grid bg-[#007718]/20 rounded-[10px] gap-3 p-5;
+  @apply grid bg-[#007718]/20 gap-3 p-5;
 }
 
 .board--size-4 {

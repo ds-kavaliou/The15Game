@@ -1,148 +1,87 @@
 import "./style.css";
 
-const RIGHT = [-1, 0] as const;
-const LEFT = [1, 0] as const;
-const UP = [0, 1] as const;
-const DOWN = [0, -1] as const;
-
-type TMove = typeof RIGHT | typeof LEFT | typeof UP | typeof DOWN;
-type TItem = { index: number; name: number; isEmpty: boolean };
-type TCoord = [x: number, y: number];
-
-class SoundBar {
-  private _move = new Audio();
-
-  constructor(src: string) {
-    this._move.src = src;
-    this._move.load();
-  }
-
-  public play() {
-    this._move.currentTime = 0;
-    this._move.play();
-  }
-}
-class Game extends EventTarget {
-  private _matrix: TItem[][] = [];
-  private _empty: TCoord = [0, 0];
-
-  public get matrix() {
-    return this._matrix;
-  }
-
-  constructor() {
-    super();
-  }
-
-  public setSize(size: number) {
-    this._matrix = createMatrix<TItem>(size, (size, x, y) => ({
-      index: size * x + y,
-      name: size * x + y + 1,
-      isEmpty: size ** 2 === size * x + y + 1,
-    }));
-
-    this._empty = [size - 1, size - 1];
-
-    this.dispatchEvent(
-      new CustomEvent("ready", { detail: { size: this._matrix.length } })
-    );
-  }
-
-  public move([dx, dy]: TMove) {
-    const [ex, ey] = this._empty;
-    const [nx, ny]: TCoord = [ex + dx, ey + dy];
-
-    if (this.canMove([nx, ny])) {
-      this.swap([ex, ey], [nx, ny]);
-      this._empty = [nx, ny];
-
-      this.dispatchEvent(
-        new CustomEvent("moved", {
-          detail: {
-            prev: { index: this._matrix[ey][ex].index, x: ex, y: ey },
-            next: { index: this._matrix[ny][nx].index, x: nx, y: ny },
-          },
-        })
-      );
-    }
-  }
-
-  public start() {
-    const moves = [UP, DOWN, RIGHT, LEFT];
-
-    for (let i = 0; i < 120; i++) {
-      this.move(moves[Math.floor(Math.random() * moves.length)]);
-    }
-  }
-
-  private canMove([x, y]: TCoord) {
-    return (
-      x >= 0 && x < this._matrix.length && y >= 0 && y < this._matrix.length
-    );
-  }
-
-  private swap([x1, y1]: TCoord, [x2, y2]: TCoord) {
-    [this._matrix[y1][x1], this._matrix[y2][x2]] = [
-      this._matrix[y2][x2],
-      this._matrix[y1][x1],
-    ];
-  }
-}
-
-/**LIBRARY */
-
-function createElementsFromString(html: string) {
-  const parser = new DOMParser();
-  const document = parser.parseFromString(html, "text/html");
-  return [...document.body.children];
-}
-
-function createHTMLString<T>(array: T[], fn: (item: T, i: number) => string) {
-  return array.reduce((acc, value, i) => acc + fn(value, i), "");
-}
-
-function createMatrix<T>(
-  size: number,
-  map: (size: number, x: number, y: number) => T
-) {
-  return Array.from({ length: size }, (_, i) =>
-    Array.from({ length: size }, (_, j) => map(size, i, j))
-  );
-}
+import { DOWN, LEFT, RIGHT, UP } from "./board";
+import {
+  createElementsFromString,
+  createStringFromList,
+  toTimeString,
+} from "./utils";
+import { App } from "./app";
+import { Sound } from "./sound";
 
 /** APP */
-const menu = document.querySelector("#menu")!;
-const radios = [...menu.querySelectorAll<HTMLInputElement>("[type='radio']")];
 
 const board = document.querySelector<HTMLDivElement>("#board")!;
 
-const game = new Game();
-const soundbar = new SoundBar("/move.mp3");
+const menu = document.querySelector<HTMLDivElement>("#menu")!;
+const infoEl = menu.querySelector<HTMLSpanElement>("#info")!;
 
-game.addEventListener("ready", ((e: CustomEvent) => {
-  const { size } = e.detail;
+const pane = document.querySelector<HTMLDivElement>("#pane")!;
+
+const muteEl = pane.querySelector<HTMLButtonElement>("#mute");
+const counterEl = pane.querySelector<HTMLSpanElement>("#counter")!;
+const timeEl = pane.querySelector<HTMLSpanElement>("#time")!;
+
+const radios = [...pane.querySelectorAll<HTMLInputElement>("[type='radio']")];
+
+const app = new App();
+const sound = new Sound("/sound/move.mp3");
+
+app.state.listen("counter", ({ counter }) => {
+  counterEl.textContent = `${counter}`;
+});
+
+app.state.listen("time", ({ time }) => {
+  timeEl.textContent = toTimeString(time);
+});
+
+app.addEventListener("init", ((e: CustomEvent<{ matrix: any[][] }>) => {
+  const {
+    matrix,
+    matrix: { length },
+  } = e.detail;
 
   const prev = board.className.match(/board--size-\d+/)?.[0];
   prev
-    ? board?.classList.replace(prev, `board--size-${size}`)
-    : board?.classList.add(`board--size-${size}`);
+    ? board?.classList.replace(prev, `board--size-${length}`)
+    : board?.classList.add(`board--size-${length}`);
 
-  const items = createHTMLString(game.matrix, (row, i) =>
-    createHTMLString(
+  const items = createStringFromList(matrix, (row, i) =>
+    createStringFromList(
       row,
-      ({ name, isEmpty }, j) => /*html */ `
+      ({ name, empty }, j) => /*html */ `
         <div class="tile" style="grid-area: ${i + 1} / ${j + 1};"
-          ${isEmpty ? "data-hidden" : ""}>
+          ${empty ? "data-hidden" : ""}>
           <span>${name}</span>
         </div>
       `
     )
   );
 
-  board?.replaceChildren(...createElementsFromString(items));
+  board.replaceChildren(...createElementsFromString(items));
+  infoEl.textContent = "Double tap or press 'Enter'";
 }) as EventListener);
 
-game.addEventListener("moved", ((e: CustomEvent) => {
+app.addEventListener("start", ((e: CustomEvent<{ matrix: any[][] }>) => {
+  menu.classList.add("hidden");
+
+  const { matrix } = e.detail;
+
+  const tiles = [...board.children] as HTMLDivElement[];
+
+  matrix.forEach((row, y) => {
+    row.forEach(({ index }, x) => {
+      tiles[index].style["gridArea"] = `${y + 1} / ${x + 1}`;
+    });
+  });
+}) as EventListener);
+
+app.addEventListener("end", () => {
+  menu.classList.remove("hidden");
+  infoEl.innerHTML = `You Won! It takes you <strong>${app.state.counter}</strong> moves and <strong>${app.state.time}<strong> seconds`;
+});
+
+app.addEventListener("move", ((e: CustomEvent) => {
   const { prev, next } = e.detail;
 
   const elements = [...board.children] as HTMLDivElement[];
@@ -150,35 +89,44 @@ game.addEventListener("moved", ((e: CustomEvent) => {
   elements[prev.index].style["gridArea"] = `${prev.y + 1} / ${prev.x + 1}`;
   elements[next.index].style["gridArea"] = `${next.y + 1} / ${next.x + 1}`;
 
-  soundbar.play();
+  sound.play();
 }) as EventListener);
 
-menu.addEventListener("change", (e) => {
-  const target = <HTMLInputElement>e.target;
-  game.setSize(Number(target.value));
-});
+app.addEventListener("playpause", ((e: CustomEvent<{ paused: boolean }>) => {
+  menu.classList.toggle("hidden", !e.detail.paused);
+  if (e.detail.paused) {
+    infoEl.textContent = "Pause";
+  }
+}) as EventListener);
 
-radios[0].click();
+menu.addEventListener("dblclick", () => app.start());
 
-document
-  .querySelector<HTMLButtonElement>("#start")!
-  .addEventListener("click", () => {
-    game.start();
+muteEl?.addEventListener("click", () => {
+  sound.mute((muted) => {
+    muteEl.children[0].classList.toggle("hidden", muted);
+    muteEl.children[1].classList.toggle("hidden", !muted);
   });
+});
 
 document.addEventListener("keydown", (e) => {
   switch (e.code) {
     case "ArrowUp":
-      game.move(UP);
+      app.move(UP);
       break;
     case "ArrowDown":
-      game.move(DOWN);
+      app.move(DOWN);
       break;
     case "ArrowRight":
-      game.move(RIGHT);
+      app.move(RIGHT);
       break;
     case "ArrowLeft":
-      game.move(LEFT);
+      app.move(LEFT);
+      break;
+    case "Escape":
+      app.playpause();
+      break;
+    case "Enter":
+      app.state.running ? app.playpause() : app.start();
       break;
   }
 });

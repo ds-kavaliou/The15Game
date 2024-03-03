@@ -29,6 +29,10 @@ export class Board {
     return this.#matrix;
   }
 
+  public get empty() {
+    return this.#empty;
+  }
+
   public create(size: number = 4, fn: ({ hash }: { hash: string }) => void) {
     this.#matrix = createMatrix<Tile>(
       size,

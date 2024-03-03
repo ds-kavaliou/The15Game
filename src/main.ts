@@ -99,6 +99,25 @@ app.addEventListener("playpause", ((e: CustomEvent<{ paused: boolean }>) => {
   }
 }) as EventListener);
 
+board.addEventListener("click", (e) => {
+  const el = [...board.children].find((el) =>
+    el.contains(e.target as Node)
+  ) as HTMLElement;
+  if (el) {
+    const [x, y] = [
+      Number(el.style["gridColumnStart"]) - 1,
+      Number(el.style["gridRowStart"]) - 1,
+    ];
+
+    const direction = [RIGHT, LEFT, UP, DOWN].find(
+      ([dx, dy]) =>
+        dx === x - app.board.empty[0] && dy === y - app.board.empty[1]
+    );
+
+    direction && app.move(direction);
+  }
+});
+
 menu.addEventListener("dblclick", () => app.start());
 
 muteEl?.addEventListener("click", () => {

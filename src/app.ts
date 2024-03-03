@@ -25,6 +25,10 @@ export class App extends EventTarget {
     return this._state;
   }
 
+  public get board() {
+    return this._board;
+  }
+
   constructor() {
     super();
     this.init();
